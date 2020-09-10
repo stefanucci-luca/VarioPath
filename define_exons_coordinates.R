@@ -34,7 +34,7 @@ ensembl_data <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL",
 # searchAttributes(ensembl_data, "exon") # Select 
 
 #################################
-# Define the research attributes
+# Define the Mart research attributes
 #################################
 
 # these attrivutes are the ones returned in the db after the filtering. 
