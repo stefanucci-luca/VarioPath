@@ -55,7 +55,7 @@ attributes_tx = c( "chromosome_name", "exon_chrom_start", "exon_chrom_end", "str
 # Read csv from google drive - shared folder
 # NB. the file is readin the csv copy I made on my local machine
 
-VarioPath_df <- read.csv("/Users/luca/Desktop/VarioPath/disease_gene_list_20200601_transcripts_local_copy_made_on_20200909.csv",
+VarioPath_df <- read.csv("/Users/luca/Desktop/VarioPath/disease_gene_list_20200915.csv",
                          header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
 # return a few info to check if the file is ok
@@ -80,12 +80,15 @@ if (ratio_gene_occurrence > 1) {
 }
 
 # Double trasnscript IDs
-tx_occurrence <- as.data.frame(sort(table(VarioPath_df$LRG...MANE...UP.ENST.no.versioning), decreasing = TRUE))
+tx_occurrence <- as.data.frame(sort(table(VarioPath_df$chosen.transcript), decreasing = TRUE))
 ratio_txID_occurrence <- sum(tx_occurrence$Freq) / length(tx_occurrence$Freq)
 
 if (ratio_txID_occurrence > 1) {
         print("Some genes occurre more than once:")
         print(head(tx_occurrence))
+        wrong_ensID <- tx_occurrence[which(tx_occurrence$Freq > 1),]
+        wrong_ensID_original_table <- VarioPath_df[which(VarioPath_df$chosen.transcript %in% wrong_ensID[,1]),]
+        print(wrong_ensID_original_table)
 } else if (ratio_txID_occurrence == 1) {
         cat("All genes occurre just once")
 }
@@ -160,6 +163,5 @@ if (length(unique(transcript_df$hgnc_symbol)) - length(unique(VarioPath_df_clean
 } else if (length(unique(transcript_df$hgnc_symbol)) - length(unique(VarioPath_df_clean$Approved.symbol)) == 0) {
         print("the query has found all the genes.")     
         }
-
 
 
