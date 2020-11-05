@@ -1,0 +1,80 @@
+import pandas as pd
+from pandas.io.json import json_normalize
+from pyopencga.opencga_config import ClientConfiguration
+from pyopencga.opencga_client import OpencgaClient
+
+config = ClientConfiguration({"rest": {"host": "http://bioinfo.hpc.cam.ac.uk/opencga-prod"}})
+oc = OpencgaClient(config)
+oc.login(user='ls760')
+# to test one can do  oc.login(user='demouser', password='demouser’)
+# We can get the ID of all the available projects in this OpenCGA installation
+for project in oc.projects.search().get_results():
+     print(project['id'])
+# Our project is called grch38 
+# Ask Nacho the reason for this
+# Alias haven’t been assigned yet
+
+
+study_list=[]
+for study in oc.studies.search(project='grch38').get_results():
+     study_list.append(study['id'])
+
+study_list
+
+# Return the key of the variant dictionary
+for variant in oc.variants.query(study=study_list, limit=1).get_results():
+     print(variant.keys())
+
+
+# import variants from Karyn list. 
+# e.g.  variants=["1:10068:-:AACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCC","1:10057:A:C"]
+variants = pd.read_csv("~/variopath/ALL_variants_P_LP_someVUS_JUST_openCGA_IDs.txt", sep='\t')
+var_id=variants["OpenCGA_ID"].tolist()
+
+var_id_replaced = [var.replace('<DEL>', '-') for var in var_id]
+
+# Fish out Karyn variants in gnmoad 3
+
+# Deletion and insertion creates problem in the recall from openCGA
+# Create sets of a,b
+var_id_total = set(var_id)
+to_remove = set(list(filter(lambda x:'DEL' in x, var_id)))
+
+# Get new set with elements that are only in a but not in b
+var_id = var_id_total.difference(to_remove)
+var_id_list = list(var_id)
+# Very large SNPs creates problem in the openCGA queries if in a long list, I could pass them later
+ var_id = list(filter (lambda var: len (var) < 80, var_id_list))
+var_id_large = list(filter (lambda var: len (var) > 80, var_id_list))
+
+var_test = oc.variants.query(study='GNOMAD_GENOMES', id=var_id, limit = len(var_id)*2 ).get_results()
+var_test_large = oc.variants.query(study='GNOMAD_GENOMES', id=var_id_large, limit = len(var_id_large)*2 ).get_results()
+
+i=0
+appended_data = []
+while i < len(var_id):
+    if i < len(var_id) - 400: 
+        var_test = oc.variants.query(study='GNOMAD_GENOMES', id=var_id[i:i+400]).get_results()
+        i += 400
+        print(i)
+        appended_data.append(pd.DataFrame(var_test))
+    if i >= len(var_id) - 400:
+        var_test = oc.variants.query(study='GNOMAD_GENOMES', id=var_id[i:len(var_id)]).get_results()
+        i += 1000
+        appended_data.append(pd.DataFrame(var_test))
+
+
+result = pd.concat(appended_data)
+Add = json_normalize(result["annotation"])
+result2 = result.join(Add, lsuffix='_original')
+
+appended_data = [var_test, var_test_large]
+var_test = oc.variants.query(study=study_list, id=var_id).get_results()
+Var_df = pd.DataFrame(var_test)
+
+# Import TG genes
+tg_genes = pd.read_csv("", sep='\t')
+tg_gene_list = variants[“<column name>"].tolist()
+
+For gene in tg_gene_list:
+    n_var = len( list ( filter(lambda x: gene in x, Var_df[“<column name>"])))
