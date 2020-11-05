@@ -3,6 +3,11 @@ library(dplyr)
 require(reshape)
 library(stringr)
 library(jsonlite)
+
+# General settings
+project_dir <- "~/Desktop/VarioPath/"
+setwd(project_dir)
+
 # Karyn variants pathogenyc and likely pathogenic
 patho_likely_patho_df <- read_tsv("/Volumes/GoogleDrive/My Drive/Phd/VarioPath/variants/ALL_variants_P_LP_someVUS_original_karyn.txt",
                                   guess_max = 290000
@@ -23,13 +28,15 @@ c_variants = as.data.frame(unlist(
                   )
 )
 colnames(c_variants) <- "variants"
+
 # remove semicolumn at the end of the variants
 c_variants$variants <- str_remove_all(c_variants$variants, ";")
 
 c_to_p_df = merge(c_variants, 
           c_to_p, 
           by.x = "variants",
-          by.y="Input")
+          by.y="Input") %>% 
+          select("variants", "HGVS_Predicted_Protein")
 
 # There are about 70 variants missing after the merge step, try to include them. 
 #--------------------------------------------------------------------------------------------------
