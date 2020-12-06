@@ -52,8 +52,13 @@ patho_likely_patho_df <- merge(patho_likely_patho_df,
                                by.y= c("GRCh38_CHR", "GRCh38_POS", "GRCh38_REF", "GRCh38_ALT"), 
                                all.x = T)
 
+anti_join(patho_likely_patho_df, c_to_p_df, by.x= c("Chr", "Start", "REF", "ALT" ), by.y= c("GRCh38_CHR", "GRCh38_POS", "GRCh38_REF", "GRCh38_ALT"))
+
+
 #dim(patho_likely_patho_df)
 #299606     11
+#length(which(!is.na(patho_likely_patho_df$variants)))
+#dim(c_to_p_df)
 
 # There are about 70 variants missing after the merge step, try to include them. 
 #--------------------------------------------------------------------------------------------------
@@ -85,7 +90,9 @@ keep_columns = c("Chr",
 df_final <- patho_likely_patho_df[,which(colnames(patho_likely_patho_df) %in% keep_columns)]
 colnames(df_final)[3] <- "SOURCE"
 
-View(df_final[which(df_final$GENE == "VWF"),])
+
+#_____________________________________________________________________________________________
+# Transform to json for the nightingale package.
 
 json_variant_list = toJSON(unname(split(df_final, 1:nrow(df_final))))
 

@@ -1,11 +1,14 @@
 import pandas as pd
 from pandas.io.json import json_normalize
+import json
+import sys
+from pprint import pprint
 from pyopencga.opencga_config import ClientConfiguration
 from pyopencga.opencga_client import OpencgaClient
 
 config = ClientConfiguration({"rest": {"host": "http://bioinfo.hpc.cam.ac.uk/opencga-prod"}})
 oc = OpencgaClient(config)
-oc.login(user='ls760')
+oc.login(user='ls760', password='5Gaw4vHii')
 # to test one can do  oc.login(user='demouser', password='demouser’)
 # We can get the ID of all the available projects in this OpenCGA installation
 for project in oc.projects.search().get_results():
@@ -78,3 +81,50 @@ tg_gene_list = variants[“<column name>"].tolist()
 
 For gene in tg_gene_list:
     n_var = len( list ( filter(lambda x: gene in x, Var_df[“<column name>"])))
+
+
+
+
+
+
+
+
+config_dict = {"rest": {"host": host}}
+# print("Config information:\n",config_dict)
+config = ClientConfiguration(config_dict)
+oc = OpencgaClient(config)
+oc.login(user, 'TO_BE_CHANGED')
+variants = ['1:55598442:T:C', '1:55598487:A:G', '1:55598497:T:A']
+# print(variants)
+for variant in variants:
+    print('Processing variant ' + variant + '...')
+    # resp = oc.variants.query(id='1:55598442:T:C,1:55598487:A:G,1:55598497:T:A', includeSample='none', study=study_id)
+    resp = oc.variants.query(id=variant, includeSample='none', study=study_id)
+    #     resp.get_result_events("ERROR", 0)
+    vr = resp.get_results()
+    # pprint(vr)
+    for v in vr:
+        pprint(v['id'])
+        pprint(v['chromosome'])
+        pprint(v['start'])
+        pprint(v['end'])
+        # Let's save ALL stats
+        stats = v['studies'][0]['stats'][0]
+        pprint(stats['altAlleleFreq'])
+        # consequnce types
+        cts = v['annotation']['consequenceTypes']
+        for ct in cts:
+            pprint(ct['geneName'])
+            pprint(ct['ensemblTranscriptId'])
+
+
+
+
+
+
+
+
+
+
+
+
