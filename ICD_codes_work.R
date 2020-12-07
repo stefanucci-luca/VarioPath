@@ -23,7 +23,7 @@ for (icd_version in 9:10){
 	ukbdf_icd = ukbdf200k %>%  
 	            dplyr::select(matches(paste("^diagnoses.*icd", icd_version, "_f4127*", sep = ""))) # extract the icd columns
 			# NOTE: this script consider only the ICD codes used in diagnosis,
-	    # either as first or secondary diagnosis (see fields 41270, 41202 and 41204 on UKBB research website)
+	    		# either as first or secondary diagnosis (see fields 41270, 41202 and 41204 on UKBB research website)
 			# there are also other ICD codes used to describe cause of death, type of cancer, date of disease onset (which is very interesting)
 	message("there are ", dim(ukbdf_icd)[2], " ICD columns version ", icd_version, " in the datasheet") # print the number of columns with ICD values
 	# message("First ten entries are:\n", head(colnames(ukbdf_icd)))
