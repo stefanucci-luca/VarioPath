@@ -15,7 +15,7 @@ ukbdf = ukb_df('ukb44092', n_threads= 'max')
 # Subset for the 200K release
 ukb200k = read.csv("sample_list_200k.txt", header = F)		# read the list of samples that belong to the 200K subset
 ukbdf200k = ukbdf %>% 						# use the participants id to subset the entire UK BioBank cohort
-		filter("eid" %in% ukb200k$V1])
+		filter("eid" %in% ukb200k$V1)
 message("The subset has ", dim(ukbdf200k)[1], " rows and ", dim(ukbdf200k)[2], " columns in the datasheet") # print to stdout the info on the subset df
 
 # Extract columns with ICD information for icd9, icd10:
