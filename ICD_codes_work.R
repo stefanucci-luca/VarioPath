@@ -21,7 +21,7 @@ message("The subset has ", dim(ukbdf200k)[1], " rows and ", dim(ukbdf200k)[2], "
 # Extract columns with ICD information for icd9, icd10:
 for (icd_version in 9:10){
 	ukbdf_icd = ukbdf %>%  
-	            dplyr::select(matches(paste("^diagnoses.*icd", icd_version, "_f41270*", sep = ""))) # extract the icd columns
+	            dplyr::select(matches(paste("^diagnoses.*icd", icd_version, "_f4127*", sep = ""))) # extract the icd columns
 			# NOTE: this script consider only the ICD codes used in diagnosis,
 	    # either as first or secondary diagnosis (see fields 41270, 41202 and 41204 on UKBB research website)
 			# there are also other ICD codes used to describe cause of death, type of cancer, date of disease onset (which is very interesting)
