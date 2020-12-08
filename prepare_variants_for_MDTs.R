@@ -53,9 +53,6 @@ df_clean$hem = unlist(
            sum(str_count(x, "=0;")))
 )
 
-
-grep(x = df_clean$PARTECIPANTS, pattern = "0", value = T)
-
 # Report AF in 700,000 people (i.e. roughly number of newborn per year in UK).
 
 df_clean$AF_ukb_calc = as.double(
@@ -97,22 +94,25 @@ df_clean = relocate(df_clean, pLI, .after = CADD_PHRED)
 
 #_________________________________________________________________
 # Add MOI
-# MOI source df from Karyn's paper
-moi_df = readxl::read_xlsx("/Users/luca/Desktop/VarioPath/isth2020-1_genelist_supptab-4.xlsx") %>% 
-  select("Inheritance","Gene symbol (HGNC)")
+# 
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1wczybQGguCe-SCVhBwjgWimBROvFqAub/edit#gid=2116325259")
+moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI.xlsx', sheet = "BPD_HS_all_TIER1",
+                           trim_ws = T)
+moi_df <- moi_df[,c("MOI_original_column", "Gene_symbol_HGNC")]
+colnames(moi_df) <- c("Inheritance" , "SYMBOL")
 # Add MOI info
-df_clean = merge(df_clean,moi_df, by.x = "SYMBOL", by.y="Gene symbol (HGNC)", allow.cartesian=TRUE,all.x = T)
+df_clean = merge(df_clean,moi_df, by = "SYMBOL", allow.cartesian=TRUE,all.x = T)
 # move MOI column to where it belongs!
 df_clean = relocate(df_clean, Inheritance, .after = pLI)
-
+file.remove('BPD_HS_genelist_MOI.xlsx')
 #_________________________________________________________________
 # created groups with genes fro every MDT
 blee_coag = c("F10","F11","F12","F13A1","F13B","F2",
 		"F5","F7","F8","F9","FGA","FGB","FGG",
 		"GGCX","KNG1","LMAN1","MCFD2","SERPINE1",
-		"SERPINF2","VKORC1","VWF")
+		"SERPINF2","VKORC1","VWF","THBD")
 thrombosis = c("ADAMTS13","HRG","PIGA","PLG","PROC",
-		"PROS1","SERPINC1","SERPIND1","THBD")
+		"PROS1","SERPINC1","SERPIND1","THBD","F2","F5")
 platelet = c("ABCC4","ABCG5","ABCG8","ACTB","ACTN1","ANKRD26",
 		"ANO6","AP3B1","AP3D1","ARPC1B","BLOC1S3","BLOC1S6",
 		"CDC42","CYCS","DIAPH1","DTNBP1","ETV6","FERMT3","FLI1",
@@ -121,7 +121,7 @@ platelet = c("ABCC4","ABCG5","ABCG8","ACTB","ACTN1","ANKRD26",
 		"ITGA2B","ITGB3","KDSR","LYST","MECOM","MPIG6B","MPL","MYH9",
 		"NBEA","NBEAL2","P2RY12","PLA2G4A","PLAU","RASGRP2","RBM8A",
 		"RNU4ATAC","RUNX1","SLFN14","SRC","STIM1","STXBP2","TBXA2R",
-		"TBXAS1","THPO","TUBB1","VIPAS39","VPS33B","WAS")
+		"TBXAS1","THPO","TUBB1","VIPAS39","VPS33B","WAS","VWF")
 hered_sfero = c("ANK1","EPB41","EPB42","SLC4A1","SPTA1","SPTB")
 # define the MDT names
 MDTs = c("bleeding_and_coagulation",
@@ -132,7 +132,7 @@ MDTs = c("bleeding_and_coagulation",
 # Update final order for the columns 
 
 col_to_keep = c("SYMBOL", "Inheritance", "CHROM", "POS", "REF","ALT",
-                "AF_ukb_calc", "het", "hom", "AF_in_100k", "AF_in_newborn_per_year", "pLI", "CADD_PHRED", "Consequence",
+                "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", "pLI", "CADD_PHRED", "Consequence",
                 "cDNA_position", "Codons", "HGVSc",
                 "Protein_position","Amino_acids","HGVSp",
                 "Existing_variation", "IMPACT", "UKB_AF", "EUR_ALT_FREQS", "EUR_OBS_CT","AFR_ALT_FREQS","AFR_OBS_CT","AMR_ALT_FREQS","AMR_OBS_CT",
@@ -172,7 +172,7 @@ dir.create(path_to_save)
 # Create MDT spefic df
 for (domain in MDTs) {
   col_pos = which(colnames(df_clean) %in% domain)
-  tmp_df = df_clean[which(df_clean[,..col_pos] == 1),]
+  tmp_df = unique(df_clean[which(df_clean[,..col_pos] == 1),])
   mutate_all(tmp_df, as.factor)
   filename = paste(path_to_save,"MDT_for_", domain, ".xls", sep = "")
   WriteXLS::WriteXLS(tmp_df, filename, FreezeRow = 1, col.names = T)
