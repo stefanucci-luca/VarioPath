@@ -118,6 +118,20 @@ hered_sfero = c("ANK1","EPB41","EPB42","SLC4A1","SPTA1","SPTB")
 MDTs = c("bleeding_and_coagulation",
 	 "thrombosis", "platelet",
 	 "hereditary_sferocytosis")
+
+#___________________________________________________________________________________
+# Update final order for the columns 
+
+col_to_keep = c("SYMBOL", "Inheritance", "CHROM", "POS", "REF","ALT",
+                "AF_ukb_calc", "het", "hom", "AF_in_100k", "AF_in_newborn_per_year", "pLI", "CADD_PHRED", "Consequence",
+                "cDNA_position", "Codons", "HGVSc",
+                "Protein_position","Amino_acids","HGVSp",
+                "Existing_variation", "IMPACT", "UKB_AF", "EUR_ALT_FREQS", "EUR_OBS_CT","AFR_ALT_FREQS","AFR_OBS_CT","AMR_ALT_FREQS","AMR_OBS_CT",
+                "EAS_ALT_FREQS","EAS_OBS_CT","SAS_ALT_FREQS","SAS_OBS_CT", "gnomAD_AF", "gnomAD_AFR_AF","gnomAD_AMR_AF","gnomAD_ASJ_AF","gnomAD_EAS_AF","gnomAD_FIN_AF",
+                "gnomAD_NFE_AF","gnomAD_OTH_AF","gnomAD_SAS_AF" )
+
+df_clean = df_clean %>% 
+            select(col_to_keep)
 #___________________________________________________________________________________
 # Create a column for each MDT and populate it with 0
 for (var in MDTs) {
@@ -138,15 +152,16 @@ for (li in 1:dim(df_clean)[1]) {
               df_clean[li,"hereditary_sferocytosis"] = 1 
             }
 }
-dir.create("/Users/luca/Desktop/VarioPath/MDT_variatns/")
+dir.create("/Users/luca/Desktop/VarioPath/MDT_variatns/V2/")
 # Create MDT spefic df
 for (domain in MDTs) {
   col_pos = which(colnames(df_clean) %in% domain)
   tmp_df = df_clean[which(df_clean[,..col_pos] == 1),]
   mutate_all(tmp_df, as.factor)
-  filename = paste("/Users/luca/Desktop/VarioPath/MDT_variatns/","MDT_for_", domain, ".xls", sep = "")
+  filename = paste("/Users/luca/Desktop/VarioPath/MDT_variatns/V2/","MDT_for_", domain, ".xls", sep = "")
   WriteXLS::WriteXLS(tmp_df, filename, FreezeRow = 1, col.names = T)
   message("created file: ",filename)
   message("it has ", dim(tmp_df)[1]," variatns")
+  message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) ," partecipants")
 }
 
