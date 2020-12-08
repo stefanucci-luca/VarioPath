@@ -110,9 +110,9 @@ file.remove('BPD_HS_genelist_MOI.xlsx')
 blee_coag = c("F10","F11","F12","F13A1","F13B","F2",
 		"F5","F7","F8","F9","FGA","FGB","FGG",
 		"GGCX","KNG1","LMAN1","MCFD2","SERPINE1",
-		"SERPINF2","VKORC1","VWF","THBD")
+		"SERPINF2","VKORC1","VWF")
 thrombosis = c("ADAMTS13","HRG","PIGA","PLG","PROC",
-		"PROS1","SERPINC1","SERPIND1","THBD","F2","F5")
+		"PROS1","SERPINC1","SERPIND1","THBD")
 platelet = c("ABCC4","ABCG5","ABCG8","ACTB","ACTN1","ANKRD26",
 		"ANO6","AP3B1","AP3D1","ARPC1B","BLOC1S3","BLOC1S6",
 		"CDC42","CYCS","DIAPH1","DTNBP1","ETV6","FERMT3","FLI1",
@@ -121,7 +121,7 @@ platelet = c("ABCC4","ABCG5","ABCG8","ACTB","ACTN1","ANKRD26",
 		"ITGA2B","ITGB3","KDSR","LYST","MECOM","MPIG6B","MPL","MYH9",
 		"NBEA","NBEAL2","P2RY12","PLA2G4A","PLAU","RASGRP2","RBM8A",
 		"RNU4ATAC","RUNX1","SLFN14","SRC","STIM1","STXBP2","TBXA2R",
-		"TBXAS1","THPO","TUBB1","VIPAS39","VPS33B","WAS","VWF")
+		"TBXAS1","THPO","TUBB1","VIPAS39","VPS33B","WAS")
 hered_sfero = c("ANK1","EPB41","EPB42","SLC4A1","SPTA1","SPTB")
 # define the MDT names
 MDTs = c("bleeding_and_coagulation",
