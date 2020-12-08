@@ -33,19 +33,28 @@ col_to_keep = c("CHROM", "POS", "REF","ALT","CHROM","REF","ALT","CADD_PHRED", "C
 df_clean = df %>% select(col_to_keep) %>%filter(IMPACT != "LOW")
 
 #__________________________________________________________________
-# Add number of het and hom in the spreadsheet
+# Add number of het and hom and hem in the spreadsheet
 # Het
 df_clean$het = unlist(
                       lapply(df_clean$PARTECIPANTS, 
                       function(x)
-                        sum(str_count(x, "0/1")))
+                        sum(str_count(x, "=0/1;|=1/0;")))
                       )
 # Hom
 df_clean$hom = unlist(
                      lapply(df_clean$PARTECIPANTS, 
                      function(x)
-                      sum(str_count(x, "1/1")))
+                      sum(str_count(x, "=1/1;")))
                       )
+# Hem
+df_clean$hem = unlist(
+  lapply(df_clean$PARTECIPANTS, 
+         function(x)
+           sum(str_count(x, "=0;")))
+)
+
+
+grep(x = df_clean$PARTECIPANTS, pattern = "0", value = T)
 
 # Report AF in 700,000 people (i.e. roughly number of newborn per year in UK).
 
@@ -152,13 +161,20 @@ for (li in 1:dim(df_clean)[1]) {
               df_clean[li,"hereditary_sferocytosis"] = 1 
             }
 }
-dir.create("/Users/luca/Desktop/VarioPath/MDT_variatns/V2/")
+
+# Create dir with version
+path_to_save = paste("/Users/luca/Desktop/VarioPath/MDT_variatns/V", 
+                     format(Sys.time(), "%Y%m%d"), 
+                     "/",
+                     sep = "")
+dir.create(path_to_save)
+
 # Create MDT spefic df
 for (domain in MDTs) {
   col_pos = which(colnames(df_clean) %in% domain)
   tmp_df = df_clean[which(df_clean[,..col_pos] == 1),]
   mutate_all(tmp_df, as.factor)
-  filename = paste("/Users/luca/Desktop/VarioPath/MDT_variatns/V2/","MDT_for_", domain, ".xls", sep = "")
+  filename = paste(path_to_save,"MDT_for_", domain, ".xls", sep = "")
   WriteXLS::WriteXLS(tmp_df, filename, FreezeRow = 1, col.names = T)
   message("created file: ",filename)
   message("it has ", dim(tmp_df)[1]," variatns")
