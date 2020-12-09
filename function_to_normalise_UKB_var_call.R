@@ -1,4 +1,4 @@
-
+library("stringr")
 df = data.table::fread("karyns_variant_from_200KWES_biallelic_records_only_unrelated_variant_normalised_filtered_reshaped_reid.tab")
 df$mapply_dist = mapply(function(x,y) which.min(x==y),strsplit(df$REF,""),
                         strsplit(df$ALT,""))
