@@ -95,7 +95,7 @@ df2 = df.groupby(['CHROM', 'POS', 'REF', 'ALT','GENE']).agg({'source' : lambda x
                                                       'INFO': lambda x: ';' .join(x)})
 df2 = df2.sort_values(by=['CHROM', 'POS'])
 
-df2.to_csv('aggregated_karyn_resources.csv')
+df2.to_csv('/home/ls760/aggregated_karyn_resources.csv')
 
 # Number of variants in the 
 n_variatn_df = pd.read_csv("~/Desktop/VarioPath/number_variants_in_MDT_genes_clean.tsv",  delimiter='\t', skiprows=1, dtype={'n_karyn_list':np.int32, 'n_variant_in_UKB':np.int32}) 
