@@ -43,16 +43,19 @@ with tempfile.TemporaryDirectory() as tmpdirname: # Create a tmp dir that store 
       CHROM.append(rec.chrom) 
       POS.append(rec.pos) 
       REF.append(rec.ref)
-      if  isinstance(rec.alts, tuple):
-        ALT.append(rec.alts[0])
+      if  isinstance(rec.alts, tuple):          # in hgmd the ALT come as tuple. isinsatnce check if tuple
+        ALT.append(rec.alts[0])                 # if tuple take only the first allele. It never has more than one allele
       else:
-        ALT.append(rec.alts)
-      sourx.append(filename.split("_")[0])
+        ALT.append(rec.alts)                    # if not tuple just add to the list
+      sourx.append(filename.split("_")[0])      
       if filename.split("_")[0] == 'hgmd':
-        PATHO.append(','.join(rec.info['CLASS']))
+        PATHO.append(rec.info['CLASS'])
         GENE.append(rec.info['GENE'])
       else:
-        PATHO.append(','.join(rec.info['CLNSIG']))
+        if 'CLNSIG' in rec.info:
+          PATHO.append(','.join(rec.info['CLNSIG']))
+        else:
+          PATHO.append(','.join(rec.info['CLNSIGINCL'][0].split(":")[1]))
         if 'GENEINFO' in rec.info:
           GENE.append(rec.info['GENEINFO'].split(':')[0])
         else:
@@ -81,6 +84,7 @@ for file in bed_to_read:
       ALT.append(splitted[index_pos[0]+2])
       INFO.append(line.split("\t")[4])
       sourx.append(os.path.basename(file).split("_")[0])
+      PATHO.append(splitted[-2])
 
 
 # From the lists create a dataframe
@@ -89,17 +93,19 @@ df = pd.DataFrame({'CHROM':CHROM,
                    'REF':REF, 
                    'ALT':ALT,
                    'GENE':GENE,
-                   'source':sourx,
+                   'PATHOGENICITY':PATHO,
+                   'SOURCE':sourx,
                    'INFO':INFO})
 
 
 # Remove duplicates variant entries and
 # Pivot the dataframe to have source of information on the same line. 
-df2 = df.groupby(['CHROM', 'POS', 'REF', 'ALT','GENE']).agg({'source' : lambda x: ','.join(x), 
-                                                      'INFO': lambda x: ';' .join(x)})
+df2 = df.groupby(['CHROM', 'POS', 'REF', 'ALT','GENE']).agg({'SOURCE' : lambda x: ','.join(x), 
+                                                              'PATHOGENICITY': lambda x: ',' .join(x),
+                                                              'INFO': lambda x: ';' .join(x)})
 df2 = df2.sort_values(by=['CHROM', 'POS'])
 
-df2.to_csv('/home/ls760/aggregated_karyn_resources.csv')
+df2.to_csv('/home/ls760/aggregated_karyn_resources.csv', sep='\t')
 
 # Number of variants in the 
 n_variatn_df = pd.read_csv("~/Desktop/VarioPath/number_variants_in_MDT_genes_clean.tsv",  delimiter='\t', skiprows=1, dtype={'n_karyn_list':np.int32, 'n_variant_in_UKB':np.int32}) 
