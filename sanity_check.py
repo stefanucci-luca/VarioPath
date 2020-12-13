@@ -25,6 +25,7 @@ ALT = []
 sourx = []                                        # create a list with the sources of the variants.
 INFO=[]                                           # INFO column should contain all the information that are not chrom,pos,ref,alt
 GENE=[]
+PATHO=[]
 
 actual_sir=os.getcwd()
 with tempfile.TemporaryDirectory() as tmpdirname: # Create a tmp dir that store the files and indexes
@@ -48,8 +49,10 @@ with tempfile.TemporaryDirectory() as tmpdirname: # Create a tmp dir that store 
         ALT.append(rec.alts)
       sourx.append(filename.split("_")[0])
       if filename.split("_")[0] == 'hgmd':
+        PATHO.append(','.join(rec.info['CLASS']))
         GENE.append(rec.info['GENE'])
       else:
+        PATHO.append(','.join(rec.info['CLNSIG']))
         if 'GENEINFO' in rec.info:
           GENE.append(rec.info['GENEINFO'].split(':')[0])
         else:
@@ -62,7 +65,8 @@ with tempfile.TemporaryDirectory() as tmpdirname: # Create a tmp dir that store 
   shutil.rmtree(dir, ignore_errors=False)
   os.chdir(actual_sir)    
 
-
+# It is not possible to parse this file with existing parser. I created this simple one that extract the info I want.
+# Everything else goes in the INFO column
 for file in bed_to_read:
   with open(file) as bed_file:
     for line in bed_file:
@@ -81,12 +85,12 @@ for file in bed_to_read:
 
 # From the lists create a dataframe
 df = pd.DataFrame({'CHROM':CHROM, 
-                          'POS':POS, 
-                          'REF':REF, 
-                          'ALT':ALT,
-                          'GENE':GENE,
-                          'source':sourx,
-                          'INFO':INFO})
+                   'POS':POS, 
+                   'REF':REF, 
+                   'ALT':ALT,
+                   'GENE':GENE,
+                   'source':sourx,
+                   'INFO':INFO})
 
 
 # Remove duplicates variant entries and
