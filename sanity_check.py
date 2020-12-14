@@ -166,9 +166,8 @@ plt.show()
 
 
 sns.relplot(x='n_karyn_list', y='n_variant_in_UKB', hue='gene', col='MDT', data = df4)
-label_point(df4.n_karyn_list, df4.n_variant_in_UKB, df4.gene, plt.gca())
 plt.show()
-sns.regplot(x='n_variant_unfiltered', y='n_karyn_list', hue='gene', data = df4 )
+sns.relplot(x='n_variant_unfiltered', y='n_karyn_list', hue='gene',col='MDT', data = df4 )
 plt.show()
-sns.regplot(x='n_variant_unfiltered', y='n_variant_in_UKB', hue='gene', data = df4 )
+sns.relplot(x='n_variant_unfiltered', y='n_variant_in_UKB', hue='gene',col='MDT', data = df4 )
 plt.show()
