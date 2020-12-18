@@ -2,19 +2,19 @@
 import os
 import shutil
 import tempfile
-from time import sleep
 import pysam
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import re
 import seaborn as sns
+from random import random
 
 # write in the path to the VCF or VCF like files to read
 vcf_to_read=['/home/km369/.random_stuff/2019-4/hgmd_pro_2019.4_hg38.vcf',
               '/home/km369/project-cbrc/VarioPath/clinvar_20200615.vcf'] 
 # write in the path to the file(s) that resemble a bed file but can't be parsed from any reader
-bed_to_read=['/home/km369/project-cbrc/VarioPath/curatedNBR_CSVD-TG-PAH-EAHAD-GRID-GPS_P-LP-VUS_GRCh38_v2_AssemConvert_sorted.bed']
+bed_to_read=['/home/km369/project-cbrc/VarioPath/curatedNBR_CSVD-TG-PAH-EAHAD-GRID-GPS_P-LP-VUS_GRCh38_v2_AssemConvert.bed']
 
 
 # Creates the list wjere I want to store the infromation from all the VCFs
@@ -99,11 +99,12 @@ df = pd.DataFrame({'CHROM':CHROM,
                    'INFO':INFO})
 
 
+
 # Remove duplicates variant entries and
 # Pivot the dataframe to have source of information on the same line. 
-df2 = df.groupby(['CHROM', 'POS', 'REF', 'ALT','GENE']).agg({'SOURCE' : lambda x: ','.join(x), 
-                                                              'PATHOGENICITY': lambda x: ',' .join(x),
-                                                              'INFO': lambda x: ';' .join(x)})
+df2 = df.groupby(['CHROM', 'POS', 'REF', 'ALT','GENE']).agg({'SOURCE' : lambda x: ','.join(map(str, x)), 
+                                                              'PATHOGENICITY': lambda y: ',' .join(map(str, y)),
+                                                              'INFO': lambda z: ';' .join(map(str, z))})
 df2 = df2.sort_values(by=['CHROM', 'POS'])
 
 df2.to_csv('/home/ls760/aggregated_karyn_resources.csv', sep='\t')
@@ -120,6 +121,10 @@ n_variatn_df.gene=n_variatn_df.gene.astype(str)
 var_ori.gene=var_ori.gene.astype(str)
 df4=n_variatn_df.merge(var_ori, how='left')
 
+moi=pd.read_csv("/Users/luca/Desktop/VarioPath/MDT_variants/aggregated_spreadsheet.tsv", delimiter='\t', skiprows=0) 
+moi = moi[['GENE', 'MOI_original_column']].drop_duplicates(keep='first')
+
+df4=df4.merge(moi, how='left', left_on='gene', right_on='GENE')
 
 # created groups with genes fro every MDT
 blee_coag=["F10","F11","F12","F13A1","F13B",
@@ -147,27 +152,48 @@ for i in mdt_list:
     if df4.gene[j] in eval(i):
       df4.MDT[j]=str(i)
 
-# function to plot the labels
-def label_point(x, y, val, ax):
-    a = pd.concat({'x': x, 'y': y, 'val': val}, axis=1)
-    for i, point in a.iterrows():
-      if len(val) < 10:
-        ax.text(point['x']+.02, point['y'], str(point['val']))
-      else:
-        if point.x > np.quantile(x,0.5) or point.y > np.quantile(y,0.5):
-          ax.text(point['x']+.02, point['y'], str(point['val']))
-
 sns.set_style("whitegrid")  #set polt style
-for i,grp in df4.groupby("MDT"):
-    plot=sns.lmplot(x="n_karyn_list", y="n_variant_in_UKB",  hue="gene", data=grp)
-    plot.set_titles(i)
-    label_point(grp.n_karyn_list, grp.n_variant_in_UKB, grp.gene, plt.gca())
-plt.show()
+plot1=sns.relplot(x="n_karyn_list", y="n_variant_in_UKB", hue="MOI_original_column", col='MDT', data = df4, legend=True, size="MOI_original_column", sizes=(20,20), facet_kws={'sharey': False, 'sharex': False})
+plot1.set_axis_labels('pathogenic and likely pathogenic variants', 'pathogenic and likely pathogenic variants in UK BioBank cohort')
+for i in range(len(plot1.axes[0])):
+  a = pd.concat({'x': df4.n_karyn_list, 'y': df4.n_variant_in_UKB, 'val': df4.gene}, axis=1)
+  for j, point in a.iterrows():
+    if point.val in eval(list(plot1.axes_dict.keys())[i]):
+      if point.x > np.quantile(df4.n_karyn_list,0.7) or point.y > np.quantile(df4.n_variant_unfiltered,0.7):
+        plot1.axes[0][i].text(point['x']+random(), point['y']+random(), str(point['val']), size=7)
+plt.savefig("/Users/luca/Desktop/VarioPath/MDT_variants/sanity_check/plot1_filtered_and_UKB_cohort_20201214.png", 
+            dpi="figure",
+            orientation='landscape', 
+            format="png",
+            transparent=True, 
+            bbox_inches='tight')
 
+plot2=sns.relplot(x="n_karyn_list", y="n_variant_unfiltered",  hue="MOI_original_column", col='MDT', data = df4, legend=True,size="MOI_original_column", sizes=(20,20), facet_kws={'sharey': False, 'sharex': False})
+plot2.set_axis_labels('pathogenic and likely pathogenic variants', 'all variants in list')
+for i in range(len(plot2.axes[0])):
+  a = pd.concat({'x': df4.n_karyn_list, 'y': df4.n_variant_unfiltered, 'val': df4.gene}, axis=1)
+  for j, point in a.iterrows():
+    if point.val in eval(list(plot2.axes_dict.keys())[i]):
+      if point.x > np.quantile(df4.n_karyn_list,0.7) or point.y > np.quantile(df4.n_variant_unfiltered,0.7):
+        plot2.axes[0][i].text(point['x']+random(), point['y']+random(), str(point['val']), size=7)
+plt.savefig("/Users/luca/Desktop/VarioPath/MDT_variants/sanity_check/plot2_filtered_not_filtered_20201214.png", 
+            dpi="figure",
+            orientation='landscape', 
+            format="png",
+            transparent=True, 
+            bbox_inches='tight')
 
-sns.relplot(x='n_karyn_list', y='n_variant_in_UKB', hue='gene', col='MDT', data = df4)
-plt.show()
-sns.relplot(x='n_variant_unfiltered', y='n_karyn_list', hue='gene',col='MDT', data = df4 )
-plt.show()
-sns.relplot(x='n_variant_unfiltered', y='n_variant_in_UKB', hue='gene',col='MDT', data = df4 )
-plt.show()
+plot3=sns.relplot(x="n_variant_in_UKB", y="n_variant_unfiltered",  hue="MOI_original_column", col='MDT', data = df4, legend=True,size="MOI_original_column", sizes=(20,20), facet_kws={'sharey': False, 'sharex': False})
+plot3.set_axis_labels('pathogenic and likely pathogenic variants in UK BioBank cohort', 'all variants in list')
+for i in range(len(plot3.axes[0])):
+  a = pd.concat({'x': df4.n_variant_in_UKB, 'y': df4.n_variant_unfiltered, 'val': df4.gene}, axis=1)
+  for j, point in a.iterrows():
+    if point.val in eval(list(plot3.axes_dict.keys())[i]):
+      if point.x > np.quantile(df4.n_variant_in_UKB,0.7) or point.y > np.quantile(df4.n_variant_unfiltered,0.7):
+        plot3.axes[0][i].text(point['x']+random(), point['y']+random(), str(point['val']), size=7)
+plt.savefig("/Users/luca/Desktop/VarioPath/MDT_variants/sanity_check/plot3_not_filtered_and_UKB_cohort_20201214.png", 
+            dpi="figure",
+            orientation='landscape', 
+            format="png",
+            transparent=True, 
+            bbox_inches='tight')

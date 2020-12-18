@@ -1,9 +1,10 @@
+#!/usr/local/bin/R
 library(tidyverse)
 # Clean dataframe
 # Read in the data.frame
 df = data.table::fread("/Users/luca/Desktop/VarioPath/MDT_master_spreadsheet_to_clean.tab")
 # create a working copy
-df_clean = df
+df_clean = unique(df)
 dim(df_clean)
 # Select relevant colums
 # colnames(df)
@@ -15,10 +16,10 @@ dim(df_clean)
 #   "USED_REF",  "BAM_EDIT",  "HGVSc", "HGVSp", "HGVS_OFFSET", "gnomAD_AF", "gnomAD_AFR_AF","gnomAD_AMR_AF","gnomAD_ASJ_AF","gnomAD_EAS_AF","gnomAD_FIN_AF",
 #   "gnomAD_NFE_AF","gnomAD_OTH_AF","gnomAD_SAS_AF","CLIN_SIG","SOMATIC","PHENO", "CADD_PHRED","CADD_RAW","CHROM", "POS", "REF","ALT","OLD_ID","UKB_AF","PARTECIPANTS" 
 # Keep 
-col_to_keep = c("CHROM", "POS", "REF","ALT","CHROM","REF","ALT","CADD_PHRED", "Consequence",
+col_to_keep = c("CHROM", "POS", "REF","ALT","CHROM","REF","ALT","CADD_PHRED", "Consequence", "SOURCE", "PATHOGENICITY",
                 "cDNA_position", "Codons", "HGVSc",
                 "Protein_position","Amino_acids","HGVSp",
-                "Existing_variation", "IMPACT", "SYMBOL",
+                "Existing_variation", "IMPACT", "GENE",
                 "UKB_AF", "EUR_ALT_FREQS", "EUR_OBS_CT","AFR_ALT_FREQS","AFR_OBS_CT","AMR_ALT_FREQS","AMR_OBS_CT",
                 "EAS_ALT_FREQS","EAS_OBS_CT","SAS_ALT_FREQS","SAS_OBS_CT", "gnomAD_AF", "gnomAD_AFR_AF","gnomAD_AMR_AF","gnomAD_ASJ_AF","gnomAD_EAS_AF","gnomAD_FIN_AF",
                 "gnomAD_NFE_AF","gnomAD_OTH_AF","gnomAD_SAS_AF","PARTECIPANTS" )
@@ -105,7 +106,33 @@ tmp2 = gnomad_pli[ - which(gnomad_pli$gene %in%
 gnomad_pli <- rbind(tmp,tmp2)
 
 # merge tables
-df_clean = merge(df_clean,gnomad_pli, by.x = "SYMBOL", by.y="gene", all.x = T)
+df_clean = merge(df_clean,gnomad_pli, by.x = "GENE", by.y="gene", all.x = T)
+dim(df_clean)
+
+#_________________________________________________________________
+# Correct variant for gender
+# UK Biobank in the VCF file report all gender as 0/0 or 0/1. Doesn't have hemizygous.
+# Here I correct for that and move to hemizygous the male that are 0/1 for X-linked genes
+
+male = read_csv("~/Desktop/VarioPath/gender_200K_info/male_IDs_200K.txt", 
+                col_names = F)
+gender_not_known = read_csv("~/Desktop/VarioPath/gender_200K_info/gender_not_assigned_200K.txt", 
+                            col_names = F)
+
+for (i in 1:dim(df_clean)[1]){
+  if (df_clean[i,"CHROM"] == 'X') {
+    partecipants = str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]][seq(1, length(str_split(df_clean[10,"PARTECIPANTS"], "=| ")[[1]]), 2)]
+    for (j in partecipants){
+      if (j %in% male$X1) {
+        df_clean[i,"het"] = df_clean[i,"het"] - 1
+        df_clean[i,"hem"] = df_clean[i,"hem"] + 1 
+      } else if (j %in% gender_not_known$X1) {
+        print(j)
+        print('MANUALLY CHECK THIS PERSON!')
+      }
+    }
+  }
+}
 
 #_________________________________________________________________
 # Add MOI
@@ -116,86 +143,9 @@ moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI.xlsx', sheet = "BPD_HS_all_TIER1
 moi_df <- moi_df[,c("Gene_symbol_HGNC","Disorder(s)", "MOI_original_column", "MOI_AD", "MOI_AR", "MOI_XL", "Disorder_2", "MOI_Disorder_2")]
 
 # Add MOI info
-df_clean = merge(df_clean,moi_df, by.x = "SYMBOL", by.y="Gene_symbol_HGNC", allow.cartesian=TRUE,all.x = T)
+df_clean = merge(df_clean,moi_df, by.x = "GENE", by.y="Gene_symbol_HGNC", allow.cartesian=TRUE,all.x = T)
 
 file.remove('BPD_HS_genelist_MOI.xlsx')
-
-#_________________________________________________________________
-# Add source of the information and the info columns from Karyn's original file
-googledrive::drive_download("https://drive.google.com/file/d/1peLw5Zo5AVlg_q6npIMq_bAdth38bbGE/view?usp=sharing")
-variant_ori_df = data.table::fread("VarioPath_variants_20200615.tsv")
-
-variant_ori_df = transform(variant_ori_df, INFO = reshape::colsplit(INFO, split = ":|;", names = "INFO"))
-variant_ori_df$gene = unlist(
-                            lapply( 
-                              apply(variant_ori_df, 1, 
-                                    function(x)
-                                      unique(gsub(".*=","",grep("GENE", x, value = TRUE)))),
-                              '[', 1)
-                          )
-
-# subset the df
-variant_ori_df = variant_ori_df %>% 
-                  select(c("openCGA_ID","QUAL","FILTER","INFO")) %>% 
-                  filter()
-
-# normalise the variants
-norm_df = as.data.frame(str_split_fixed(variant_ori_df$openCGA_ID, ":", 4))
-
-colnames(norm_df) <- c("CHROM", "POS", "REF", "ALT")
-norm_df$POS = as.numeric(as.character(norm_df$POS))
-norm_df$REF = as.character(norm_df$REF)
-norm_df$ALT = as.character(norm_df$ALT) 
-norm_df$mapply_dist = mapply(function(x,y) which.min(x==y),strsplit(norm_df$REF,""),
-                        strsplit(norm_df$ALT,""))
-
-df = norm_df
-df2 = df
-
-for (variable in 1:dim(df)[1]) {
-  if (df[variable,"mapply_dist"] == 2){
-    if (str_length(df2[variable,"REF"]) > str_length(df2[variable,"ALT"]) ) {
-      df2[variable,"POS"] <- as.numeric(df2[variable,"POS"]) + 1
-      df2[variable,"REF"] <- paste0(na.omit(strsplit(df[variable,"REF"],"")[[1]][df[variable,"mapply_dist"]:length(strsplit(df[variable,"REF"],"")[[1]])]), collapse="")
-      if (str_length(df2[variable,"ALT"]) == 1) {
-        df2[variable,"ALT"] <- "-"
-      } else {
-        df2[variable,"ALT"] <- paste0(na.omit(strsplit(df[variable,"ALT"],"")[[1]][1:length(strsplit(df[variable,"ALT"],"")[[1]])]), collapse="")
-      }
-    } else {
-      df2[variable,"POS"] <- as.numeric(df2[variable,"POS"]) + 1
-      df2[variable,"ALT"] <- paste0(na.omit(strsplit(df[variable,"ALT"],"")[[1]][df[variable,"mapply_dist"]:length(strsplit(df[variable,"ALT"],"")[[1]])]), collapse="")
-      if (str_length(df2[variable,"REF"]) == 1) {
-        df2[variable,"REF"] <- "-"
-      } else {
-        df2[variable,"REF"] <- paste0(na.omit(strsplit(df[variable,"REF"],"")[[1]][1:length(strsplit(df[variable,"REF"],"")[[1]])]), collapse="")
-      }
-    }
-  } else if (df[variable,"mapply_dist"] > 2){
-    if (str_length(df2[variable,"REF"]) > str_length(df2[variable,"ALT"]) ) {
-      df2[variable,"POS"] <- as.numeric(df2[variable,"POS"]) + 1
-      df2[variable,"REF"] <- paste0(na.omit(strsplit(df[variable,"REF"],"")[[1]][2:length(strsplit(df[variable,"REF"],"")[[1]])]), collapse="")
-      if (str_length(df2[variable,"ALT"]) == 1) {
-        df2[variable,"ALT"] <- "-"
-      } else {
-        df2[variable,"ALT"] <- paste0(na.omit(strsplit(df[variable,"ALT"],"")[[1]][1:length(strsplit(df[variable,"ALT"],"")[[1]])]), collapse="")
-      }
-    } else {
-      df2[variable,"POS"] <- as.numeric(df2[variable,"POS"]) + 1
-      df2[variable,"ALT"] <- paste0(na.omit(strsplit(df[variable,"ALT"],"")[[1]][2:length(strsplit(df[variable,"ALT"],"")[[1]])]), collapse="")
-      if (str_length(df2[variable,"REF"]) == 1) {
-        df2[variable,"REF"] <- "-"
-      } else {
-        df2[variable,"REF"] <- paste0(na.omit(strsplit(df[variable,"REF"],"")[[1]][1:length(strsplit(df[variable,"REF"],"")[[1]])]), collapse="")
-      }
-    }
-  }
-}
-
-variant_ori_df$NEW_ID <- paste(df2$CHROM, df2$POS, df2$REF, df2$ALT , sep="_")
-
-
-file.remove('VarioPath_variants_20200615.tsv')
 
 #_________________________________________________________________
 # created groups with genes fro every MDT
@@ -223,8 +173,9 @@ MDTs = c("bleeding_and_coagulation",
 #___________________________________________________________________________________
 # Update final order for the columns 
 
-col_to_keep = c("SYMBOL", "CHROM", "POS", "REF","ALT",
-                "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", "pLI", "CADD_PHRED", "Consequence",
+col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT",
+                "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", 
+                "pLI", "CADD_PHRED", "Consequence", "SOURCE", "PATHOGENICITY",
                 "cDNA_position", "Codons", "HGVSc",
                 "Protein_position","Amino_acids","HGVSp",
                 "Disorder(s)", "MOI_original_column", "MOI_AD", "MOI_AR", "MOI_XL", "Disorder_2", "MOI_Disorder_2",
@@ -241,16 +192,16 @@ for (var in MDTs) {
 }
 # Sustitute 0 with 1 if the gene belong to that MDT
 for (li in 1:dim(df_clean)[1]) {
-            if (df_clean[li,"SYMBOL"] %in% blee_coag) {
+            if (df_clean[li,"GENE"] %in% blee_coag) {
               df_clean[li,"bleeding_and_coagulation"] = 1 
             } 
-            if(df_clean[li,"SYMBOL"] %in% thrombosis) {
+            if(df_clean[li,"GENE"] %in% thrombosis) {
               df_clean[li,"thrombosis"] = 1 
             }
-            if(df_clean[li,"SYMBOL"] %in% platelet) {
+            if(df_clean[li,"GENE"] %in% platelet) {
               df_clean[li,"platelet"] = 1 
             }
-            if(df_clean[li,"SYMBOL"] %in% hered_sfero) {
+            if(df_clean[li,"GENE"] %in% hered_sfero) {
               df_clean[li,"hereditary_sferocytosis"] = 1 
             }
 }
@@ -270,7 +221,6 @@ for (domain in MDTs) {
   filename = paste(path_to_save,"MDT_for_", domain, ".xls", sep = "")
   WriteXLS::WriteXLS(tmp_df, filename, FreezeRow = 1, col.names = T)
   message("created file: ",filename)
-  message("it has ", dim(tmp_df)[1]," variatns")
-  message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) ," partecipants")
+  message("it has ", dim(tmp_df)[1]," variants")
+  message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) + sum(tmp_df$hem)," participants")
 }
-
