@@ -164,11 +164,11 @@ platelet = c("ABCC4","ABCG5","ABCG8","ACTB","ACTN1","ANKRD26",
 		"NBEA","NBEAL2","P2RY12","PLA2G4A","PLAU","RASGRP2","RBM8A",
 		"RNU4ATAC","RUNX1","SLFN14","SRC","STIM1","STXBP2","TBXA2R",
 		"TBXAS1","THPO","TUBB1","VIPAS39","VPS33B","WAS")
-hered_sfero = c("ANK1","EPB41","EPB42","SLC4A1","SPTA1","SPTB")
+hered_sphero = c("ANK1","EPB41","EPB42","SLC4A1","SPTA1","SPTB")
 # define the MDT names
 MDTs = c("bleeding_and_coagulation",
 	 "thrombosis", "platelet",
-	 "hereditary_sferocytosis")
+	 "hereditary_spherocytosis")
 
 #___________________________________________________________________________________
 # Update final order for the columns 
@@ -209,8 +209,8 @@ for (li in 1:dim(df_clean)[1]) {
             if(df_clean[li,"GENE"] %in% platelet) {
               df_clean[li,"platelet"] = 1 
             }
-            if(df_clean[li,"GENE"] %in% hered_sfero) {
-              df_clean[li,"hereditary_sferocytosis"] = 1 
+            if(df_clean[li,"GENE"] %in% hered_sphero) {
+              df_clean[li,"hereditary_spherocytosis"] = 1 
             }
 }
 
