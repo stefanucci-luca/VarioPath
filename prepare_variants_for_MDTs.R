@@ -185,6 +185,14 @@ col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT",
 
 df_clean = df_clean %>% 
             select(col_to_keep)
+
+#___________________________________________________________________________________
+# Replace source 
+
+df_clean$SOURCE <- str_replace_all(df_clean$SOURCE, 
+                                   pattern = "hgmd", 
+                                   "CuratedPub")
+
 #___________________________________________________________________________________
 # Create a column for each MDT and populate it with 0
 for (var in MDTs) {
