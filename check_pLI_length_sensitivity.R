@@ -81,11 +81,11 @@ complete_df = na.omit(complete_df)
 ggplot(complete_df, aes( complete_df$pLI, y = complete_df$length_ORF)) + 
   geom_point() 
 # trascriptome pLI
-ggplot(complete_df, aes( x= pLI, ..count..)) + 
+ggplot(complete_df, aes( x= as.factor(pLI), ..count..)) + 
   geom_density() 
 
 # trascriptome pLI grouped by ORF length
-ggplot(complete_df, aes(pLI, ..count.., fill=group_orf )) + 
+ggplot(complete_df, aes( pLI, ..count.., fill=group_orf )) + 
   geom_bar(position='dodge')
 
 # trascriptome pLI grouped by protein length
