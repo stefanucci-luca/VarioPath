@@ -68,19 +68,12 @@ complete_df = list(orf_length,
               reduce(inner_join, 
                      by = "ensembl_transcript_id")
 # group list according to ORF lengths
-complete_df$group_orf <- cut(complete_df$length_ORF, 
-                         breaks= c( seq(quantile(complete_df$length_ORF)[1],
-                                        quantile(complete_df$length_ORF)[3],
-                                        100), 
-                                    seq(quantile(complete_df$length_ORF)[3],
-                                        quantile(complete_df$length_ORF)[5],
-                                        500) )
+complete_df$group_orf <- cut_number(complete_df$length_ORF, 
+                         25
                          )
 
-complete_df$group_protein <- cut(complete_df$length_protein, 
-                                 breaks= seq(min(complete_df$length_protein),
-                                             max(complete_df$length_protein),
-                                             500)
+complete_df$group_protein <- cut_number(complete_df$length_protein, 
+                                 25
                           )
 # remove eventual NA
 complete_df = na.omit(complete_df)
@@ -90,11 +83,12 @@ ggplot(complete_df, aes( complete_df$pLI, y = complete_df$length_ORF)) +
 # trascriptome pLI
 ggplot(complete_df, aes( x= pLI, ..count..)) + 
   geom_density() 
+
 # trascriptome pLI grouped by ORF length
-ggplot(complete_df, aes(pLI, ..count.., color=group_orf )) + 
-  geom_density() + 
-  facet_wrap('group_orf', scales = 'free_y')
+ggplot(complete_df, aes(pLI, ..count.., fill=group_orf )) + 
+  geom_bar(position='dodge')
+
 # trascriptome pLI grouped by protein length
-ggplot(complete_df, aes(pLI, ..count.., color=group_protein )) + 
+ggplot(complete_df, aes(pLI, ..count.., fill=group_protein )) + 
   geom_density() + 
   facet_wrap('group_protein', scales = 'free_y')
