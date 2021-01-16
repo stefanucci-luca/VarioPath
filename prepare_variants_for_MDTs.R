@@ -137,15 +137,15 @@ for (i in 1:dim(df_clean)[1]){
 #_________________________________________________________________
 # Add MOI
 # 
-googledrive::drive_download("https://drive.google.com/file/d/1wczybQGguCe-SCVhBwjgWimBROvFqAub/view?usp=sharing")
-moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI.xlsx', sheet = "BPD_HS_all_TIER1",
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1GM6A0aM_oMGG7qH7SdRBeXDzsTt8dKvFQ89Ua7HJjwg/edit?usp=sharing")
+moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI_20201209.xlsx', sheet = "BPD_HS_genelist_MOI_20201209",
                            trim_ws = T)
 moi_df <- moi_df[,c("Gene_symbol_HGNC","Disorder(s)", "MOI_original_column", "MOI_AD", "MOI_AR", "MOI_XL", "Disorder_2", "MOI_Disorder_2")]
 
 # Add MOI info
 df_clean = merge(df_clean,moi_df, by.x = "GENE", by.y="Gene_symbol_HGNC", allow.cartesian=TRUE,all.x = T)
 
-file.remove('BPD_HS_genelist_MOI.xlsx')
+file.remove('BPD_HS_genelist_MOI_20201209.xlsx')
 
 #_________________________________________________________________
 # created groups with genes fro every MDT
@@ -215,7 +215,7 @@ for (li in 1:dim(df_clean)[1]) {
 }
 
 # Create dir with version
-path_to_save = paste("/Users/luca/Desktop/VarioPath/MDT_variatns/V", 
+path_to_save = paste("/Users/luca/Desktop/VarioPath/MDT_variants/V", 
                      format(Sys.time(), "%Y%m%d"), 
                      "/",
                      sep = "")
@@ -227,7 +227,11 @@ for (domain in MDTs) {
   tmp_df = unique(df_clean[which(df_clean[,..col_pos] == 1),])
   mutate_all(tmp_df, as.factor)
   filename = paste(path_to_save,"MDT_for_", domain, ".xls", sep = "")
-  WriteXLS::WriteXLS(tmp_df, filename, FreezeRow = 1, col.names = T)
+  WriteXLS::WriteXLS(x = tmp_df, 
+                     ExcelFileName = filename, 
+                     SheetNames = domain, 
+                     FreezeRow = 1, 
+                     col.names = T)
   message("created file: ",filename)
   message("it has ", dim(tmp_df)[1]," variants")
   message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) + sum(tmp_df$hem)," participants")
