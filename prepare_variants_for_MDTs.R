@@ -173,7 +173,7 @@ MDTs = c("bleeding_and_coagulation",
 #___________________________________________________________________________________
 # Update final order for the columns 
 
-col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT",
+col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT", "PARTECIPANTS",
                 "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", 
                 "pLI", "CADD_PHRED", "Consequence", "SOURCE", "PATHOGENICITY",
                 "cDNA_position", "Codons", "HGVSc",
