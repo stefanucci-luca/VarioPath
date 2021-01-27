@@ -137,15 +137,15 @@ for (i in 1:dim(df_clean)[1]){
 #_________________________________________________________________
 # Add MOI
 # 
-googledrive::drive_download("https://docs.google.com/spreadsheets/d/1GM6A0aM_oMGG7qH7SdRBeXDzsTt8dKvFQ89Ua7HJjwg/edit?usp=sharing")
-moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI_20201209.xlsx', sheet = "BPD_HS_genelist_MOI_20201209",
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1pfTElI1IPZm0R3TCj_k2ASWpS3JHFLYizuAtrNYbF14/edit?usp=sharing")
+moi_df = readxl::read_xlsx('BPD_HS_genelist_MOI_20210119.xlsx', sheet = "BPD_HS_genelist_MOI_20201209",
                            trim_ws = T)
 moi_df <- moi_df[,c("Gene_symbol_HGNC","Disorder(s)", "MOI_original_column", "MOI_AD", "MOI_AR", "MOI_XL", "Disorder_2", "MOI_Disorder_2")]
 
 # Add MOI info
 df_clean = merge(df_clean,moi_df, by.x = "GENE", by.y="Gene_symbol_HGNC", allow.cartesian=TRUE,all.x = T)
 
-file.remove('BPD_HS_genelist_MOI_20201209.xlsx')
+file.remove('BPD_HS_genelist_MOI_20210119.xlsx')
 
 #_________________________________________________________________
 # created groups with genes fro every MDT
@@ -173,7 +173,7 @@ MDTs = c("bleeding_and_coagulation",
 #___________________________________________________________________________________
 # Update final order for the columns 
 
-col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT", "PARTECIPANTS",
+col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT", "PARTECIPANTS", # comment or not partecipants to keep it in the final MDT spreadsheets
                 "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", 
                 "pLI", "CADD_PHRED", "Consequence", "SOURCE", "PATHOGENICITY",
                 "cDNA_position", "Codons", "HGVSc",
@@ -192,6 +192,21 @@ df_clean = df_clean %>%
 df_clean$SOURCE <- str_replace_all(df_clean$SOURCE, 
                                    pattern = "hgmd", 
                                    "CuratedPub")
+
+#_________________________________________________________________
+# Get additional variant filtering information
+# 
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/17fAnlS8nNuHAxb7ZIKV4tqif7JJ-aOCVtPuTv0AQfyA/edit?usp=sharing")
+pat_df = readxl::read_xlsx('Pathogenicity_JC_KM_20210126.xlsx',
+                           trim_ws = T)
+pat_keep_df <- pat_df[,c("PATHOGENICITY","stay/go", "group")] %>% 
+  filter(`stay/go` == 'stay')
+
+# Add MOI info
+df_clean = df_clean %>% 
+           filter(PATHOGENICITY %in% pat_keep_df$PATHOGENICITY)
+
+file.remove('Pathogenicity_JC_KM_20210126.xlsx')
 
 #___________________________________________________________________________________
 # Create a column for each MDT and populate it with 0
@@ -236,3 +251,11 @@ for (domain in MDTs) {
   message("it has ", dim(tmp_df)[1]," variants")
   message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) + sum(tmp_df$hem)," participants")
 }
+
+
+
+
+
+
+
+
