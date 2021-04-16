@@ -1,0 +1,109 @@
+---
+title: "check_gender_distribution_xlinked"
+author: "ls760"
+date: "11/02/2021"
+output:
+  pdf_document: 
+    fig_crop: no
+    fig_height: 13
+    fig_width: 12
+  html_document:
+    fig_height: 10
+    fig_width: 14
+    highlight: tango
+    theme: readable
+---
+
+## Gender distribution of X-linked diseases
+
+I selected the genes that are cause of X-linked diseases (plus NBEAL2 as control):
+
+| Gene | disease | MOI |
+| ----- | ------- | ---- |
+| F8 | FVIII deficiency | XLR |
+| F9 | FIX deficiency | XLR
+| FLNA | thrombocytopenia with giant platelets |   |
+| NBEAL2 | GPS  |  Not x-linked. used as control    
+| PIGA | Paroxysmal nocturnal hemoglobinuria  | Somatic | 
+| WAS | Wiskott-Aldrich syndrome | XLR |
+
+```{r, echo=T, warning=F, message=F}
+require(reshape2)
+require(tidyverse)
+load('variopath_MDT.RData')
+# create variant IDs
+df_clean$ID = paste(df_clean$CHROM, df_clean$POS, df_clean$REF, df_clean$ALT, sep = '_') 
+# reshape the table to have long format
+df_gender = unique(df_gender)
+df_gender = melt(df_clean[ (df_clean$CHROM == 'X' | df_clean$GENE == 'NBEAL2'), 
+                           c('ID','GENE','male','female') ])
+```
+
+```{r, echo=T, warning=F, message=F}
+# Check where are the majority of x-linked variants in male
+ggplot(df_gender, aes(x = ID, 
+                      y = value, 
+                      fill = variable) ) +
+  geom_bar(stat = 'identity', position = 'dodge2') + 
+  facet_wrap('GENE', scales = 'free') + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## Stats gene-level
+Look at how many people are hemizigous/male in x-linked genes
+
+```{r, echo=T, warning=F, message=F}
+gene_list  = df_clean[( df_clean$CHROM == 'X' | df_clean$GENE == 'NBEAL2'),
+                      c('GENE','male','female') ] %>% 
+  group_by(GENE) %>% 
+  summarise('n_male' = sum(male),'n_female' = sum(female))
+knitr::kable(gene_list, format = "pipe")
+```
+
+### Fisher exact test
+
+```{r, echo=T, warning=F, message=F}
+gene_list$fisher.pvalue = "1"
+for (gene in 1:dim(gene_list)[1]) {
+  total_obs_gender = (gene_list[gene,2] + gene_list[gene,3]) / 2 
+  # assuming 50:50 distribution between the genders
+  fisher.matrix = matrix(c(as.integer(gene_list[gene,2]),
+                           as.numeric(gene_list[gene,3]), 
+                           as.numeric(total_obs_gender), 
+                           as.numeric(total_obs_gender) ), 
+                         nrow = 2, 
+                         ncol = 2,
+                         byrow = T, 
+                         dimnames =
+                           list(c("observed", "expected"),
+                                c("male", "female")))
+  gene_list$fisher.pvalue[gene] = fisher.test(fisher.matrix)$p.value
+}
+knitr::kable(gene_list, format = 'pipe')
+```
+
+### Example of a fisher matrix
+
+```{r, echo=F, warning=F, message=F}
+
+#Examlpe matrix
+knitr::kable(gene_list[gene,1],format = 'simple')
+knitr::kable(fisher.matrix,format = 'simple')
+```
+
+# --- End of the script ---
+
+
+
+```{r, echo=F, warning=F, message=F}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+

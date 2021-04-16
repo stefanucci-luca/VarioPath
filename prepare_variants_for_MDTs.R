@@ -121,7 +121,7 @@ gender_not_known = read_csv("~/Desktop/VarioPath/gender_200K_info/gender_not_ass
 
 for (i in 1:dim(df_clean)[1]){
   if (df_clean[i,"CHROM"] == 'X') {
-    partecipants = str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]][seq(1, length(str_split(df_clean[10,"PARTECIPANTS"], "=| ")[[1]]), 2)]
+    partecipants = str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]][seq(1, length(str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]]), 2)]
     for (j in partecipants){
       if (j %in% male$X1) {
         df_clean[i,"het"] = df_clean[i,"het"] - 1
@@ -132,6 +132,17 @@ for (i in 1:dim(df_clean)[1]){
       }
     }
   }
+}
+
+# add Number of male and female in the spreadsheet
+
+for (i in 1:dim(df_clean)[1]){
+    partecipants = str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]][seq(1, length(str_split(df_clean[i,"PARTECIPANTS"], "=| ")[[1]]), 2)]
+    if ( sum(partecipants %in% gender_not_known$X1) >= 1 ){message('problem with participants')}
+    else if ( sum(partecipants %in% gender_not_known$X1) < 1 ){
+    df_clean$male[i] = sum(partecipants %in% male$X1)
+    df_clean$female[i] = length(partecipants) - sum(partecipants %in% male$X1)
+    }
 }
 
 #_________________________________________________________________
@@ -174,7 +185,7 @@ MDTs = c("bleeding_and_coagulation",
 # Update final order for the columns 
 
 col_to_keep = c("GENE", "CHROM", "POS", "REF","ALT", "PARTECIPANTS", # comment or not partecipants to keep it in the final MDT spreadsheets
-                "AF_ukb_calc", "het", "hom", "hem", "AF_in_100k", "AF_in_newborn_per_year", 
+                "AF_ukb_calc", "het", "hom", "hem", 'male', 'female', "AF_in_100k", "AF_in_newborn_per_year", 
                 "pLI", "CADD_PHRED", "Consequence", "SOURCE", "PATHOGENICITY",
                 "cDNA_position", "Codons", "HGVSc",
                 "Protein_position","Amino_acids","HGVSp",
@@ -251,11 +262,5 @@ for (domain in MDTs) {
   message("it has ", dim(tmp_df)[1]," variants")
   message("it has ", sum(tmp_df$het) + sum(tmp_df$hom) + sum(tmp_df$hem)," participants")
 }
-
-
-
-
-
-
 
 
