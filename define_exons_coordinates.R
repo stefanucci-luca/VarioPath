@@ -76,7 +76,7 @@ ratio_gene_occurrence <- sum(gene_occurrence$Freq) / length(gene_occurrence$Freq
 if (ratio_gene_occurrence > 1) {
         cat("Some genes occurre more than once")
         print(head(gene_occurrence))
-} else if (ration_gene_occurrence == 1) {
+} else if (ratio_gene_occurrence == 1) {
         cat("All genes occurre just once")
 }
 
@@ -210,7 +210,7 @@ project_dir <- "~/Desktop/VarioPath/"
 setwd(project_dir)
 
 # Karyn variants pathogenyc and likely pathogenic
-patho_likely_patho_df <- read_tsv("/Volumes/GoogleDrive/My Drive/Phd/VarioPath/variants/ALL_variants_P_LP_someVUS_original_karyn.txt",
+patho_likely_patho_df <- read_tsv("/Volumes/GoogleDrive/My Drive/Phd/VarioPath/variants/archive/ALL_variants_P_LP_someVUS_original_karyn.txt",
                                   guess_max = 290000
 )
 
@@ -236,7 +236,13 @@ for (info_value in info_to_extract) {
 df1 <- as.data.frame(table(patho_likely_patho_df$GENE))
 
 df3 = merge(transcript_df_protein, df1, by.x="hgnc_symbol", by.y="Var1") 
-df3 = merge(transcript_df2,  df3, by="hgnc_symbol")
+df3 = unique(merge(unique(transcript_df2[,c("ensembl_transcript_id", "hgnc_symbol", "orf_length")]),  df3[,c("hgnc_symbol","ensembl_transcript_id","peptide","length_protein","Freq")], by=c("hgnc_symbol","ensembl_transcript_id")))
+
+colnames(df3) = c("hgnc_symbol", "ensembl_transcript_id", "orf_length", "peptide", "length_protein", "variants_observed_in_gene")
+
+write_csv(df3 , file = '/Volumes/GoogleDrive/My Drive/Phd/VarioPath/genes/VarioPath_disease_gene_list_length_information_20201221.csv',append = F,
+  col_names = T)            
+
 
 var_per_len_prot = df3 %>% 
                    select(c("hgnc_symbol","orf_length","length_protein","Freq")) %>% 
