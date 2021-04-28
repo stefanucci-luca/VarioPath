@@ -61,4 +61,3 @@ for (repl in 1:length(switch_name)) {
 }
 
 saveRDS(df_complete, "/Volumes/GoogleDrive/My Drive/Phd/VarioPath/MDT/MDT Platelet/Phenotype/phenotype_biochem_urine_hearing_20210428.RDS")
-df=readRDS("/Volumes/GoogleDrive/My Drive/Phd/VarioPath/MDT/MDT Platelet/Phenotype/phenotype_biochem_urine_hearing_20210428.RDS")
