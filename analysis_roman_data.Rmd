@@ -1,0 +1,126 @@
+---
+title: "analysis_Roman_data"
+author: "ls760"
+date: "19/04/2021"
+output: 
+  html_document:
+     code_folding: "hide"
+     anchor_sections: TRUE
+     highlight: "pygments"
+     template: "default"
+     toc: true
+     df_print: paged
+     toc_depth: 2
+---
+
+```{r, echo=F, message=FALSE, warning=F}
+
+# Set the environment
+library(skimr)
+library(ggplot2)
+library(gghighlight)
+library(tidyverse)
+library(reshape2)
+library(plyr)
+library(ggExtra)
+```
+
+
+## Data
+
+```{r read in data, tidy=TRUE,  warning=FALSE, message=FALSE}
+dfr = data.table::fread("/Volumes/GoogleDrive/My Drive/Phd/VarioPath/protein_structure/Roman's_VarioPath_scores_20210312.tsv", header = T)
+## preview dfr
+# str(dfr)
+# remove V8 that is empty
+dfr = dfr[,-8]
+## inspect the DF
+skim(dfr)
+# Transform variables to numeric
+# convert class to numeric where possible
+dfr = as.data.frame(dfr)
+for(i in 1:length(colnames(dfr))){
+  if ( sum(is.na(as.numeric(as.character(dfr[,i])))) == dim(dfr)[1] ) {
+    message(colnames(dfr)[i], ' not converted')
+  } else {
+    dfr[,i] = as.numeric(as.character(dfr[,i]))
+  }
+}
+
+
+```
+
+## MDT Variants
+
+Are MDT variants similar to the rest of the cohort?
+
+```{r MDT_All_variants, warning=FALSE, message=FALSE}
+ggplot(data = dfr, mapping = aes(Score, fill = MDT_variant))+
+  geom_histogram(bandwidth = 1, bins = 40, na.rm = TRUE) 
+
+ggplot(data = dfr, mapping = aes(Score, fill = MDT_variant))+
+  geom_density(na.rm = TRUE) 
+
+ggplot(data = dfr, mapping = aes(Category, fill = MDT_variant))+
+  geom_histogram(na.rm = TRUE) 
+
+```
+
+## How does romans score correlates with effect size
+
+This analysis is difficult because Romans' score doesn't take into account the phenotype, but is intrinsi to the protein. However, effect size strongly rely on the phenotype taken into account.
+
+I will take the max effect size reported for that variant. assuing that Roman's score predict the worst outcoma as the highest score. However, there is a chance that my varaints haven't been tested against the right phenotype.
+
+Effect size can be positive or negative, so I'll use *effect_size^2^*
+
+I'll look one gene at the time on superimpose the different genes
+
+```{r correlation_roman_effect_size, warning=FALSE, message=FALSE}
+# import effect sizes
+dir_es = "/Users/luca/Library/Group Containers/G69SCX94XU.duck/Library/Application Support/duck/Volumes/logincpu.hpc.cam.ac.uk – SFTP/home/ls760/UKBb/variopath/burden_test_raremetal/test_dir/phenotypes"
+
+list_files_scores = list.files(path = dir_es, pattern = "*.dominant.singlevar.score.txt.gz$", full.names = TRUE, recursive = TRUE)
+
+# Read and create reference table with all effect sizes
+data_all =  
+  lapply(list_files_scores, data.table::fread, skip = "#CHROM", header = TRUE) %>%
+  bind_rows(.id = "file")
+
+skim(data_all)
+
+sign_pvalue = 0.05
+
+df_eff = data.table::dcast(data_all, 
+                  `#CHROM` + POS + REF + ALT ~ file, 
+                  value.var = c('ALT_EFFSIZE', "PVALUE"), function(x){max(x,na.rm = T)},
+                  subset = .(PVALUE < sign_pvalue & is.na(PVALUE) == FALSE))
+
+# return only the max squared effect size per variant
+df_eff = as.data.frame(df_eff)
+
+df_eff[sapply(df_eff, is.infinite)] <- NA
+
+df_eff$sqr_eff = sqrt(apply(df_eff[,grep(colnames(df_eff) ,pattern = "ALT_EFFSIZE*")], 
+      1, 
+      function(x){
+        max(x^2, na.rm = T)
+      }))
+
+df_eff$id = paste(paste0( 'chr', df_eff$`#CHROM`), 
+                  df_eff$POS, df_eff$REF, df_eff$ALT, sep="_")
+
+df_cor = merge(df_eff, dfr, by.x = 'id', by.y = 'Uploaded_variation', all.x = T) %>% 
+  select(c(Score,sqr_eff)) 
+
+stats::cor(df_cor$Score, df_cor$sqr_eff, method = "pearson",use = 'pairwise.complete.obs')
+
+# Color code mode of inheritance and pLI
+
+p = ggplot(df_cor, aes(Score, sqr_eff)) + 
+  geom_point() 
+
+ggMarginal(p, type = 'densigram')
+
+
+```
