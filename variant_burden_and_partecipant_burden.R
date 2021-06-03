@@ -73,7 +73,7 @@ for (MDT in MDTs) {
          height = 20, 
          width = 20,
          units = 'cm')
-
+  
   ggplot(variants, aes(x = reorder(variatn_id, -counted.partecipants), 
                        y = counted.partecipants, 
                        fill = as.factor(new_pathogenicity) )) +
@@ -152,5 +152,112 @@ ggsave(filename = 'Pathogenicity_distribution.svg',
        height = 20, 
        width = 60,
        units = 'cm')
+
+
+
+
+
+
+
+
+
+variants1 = readxl::read_xls("V20210211/MDT_for_thrombosis.xls", 
+                            col_names = T) %>% 
+  dplyr::select("GENE", "CHROM", "POS", "REF", "ALT", "PARTECIPANTS", 
+                "AF_ukb_calc", 'het', 'hom', 'hem', 'PATHOGENICITY','MOI_original_column')
+
+variants1$counted.partecipants = rowSums(variants1[,c('het', 'hom', 'hem')]) 
+variants1$variatn_id = paste(variants1$CHROM, variants1$POS, variants1$REF, variants1$ALT, sep = "_")
+variants1$new_pathogenicity = unlist(assign.new.pathogenicity(variants1$PATHOGENICITY, pat_keep_df_reshaped))
+variants1$mdt = "thrombosis"
+
+variants2 = readxl::read_xls("V20210211/MDT_for_bleeding_and_coagulation.xls", 
+                             col_names = T) %>% 
+  dplyr::select("GENE", "CHROM", "POS", "REF", "ALT", "PARTECIPANTS", 
+                "AF_ukb_calc", 'het', 'hom', 'hem', 'PATHOGENICITY','MOI_original_column')
+
+variants2$counted.partecipants = rowSums(variants2[,c('het', 'hom', 'hem')]) 
+variants2$variatn_id = paste(variants2$CHROM, variants2$POS, variants2$REF, variants2$ALT, sep = "_")
+variants2$new_pathogenicity = unlist(assign.new.pathogenicity(variants2$PATHOGENICITY, pat_keep_df_reshaped))
+variants2$mdt = "bleeding and coagulation"
+
+variants3 = readxl::read_xls("V20210211/MDT_for_platelet.xls", 
+                             col_names = T) %>% 
+  dplyr::select("GENE", "CHROM", "POS", "REF", "ALT", "PARTECIPANTS", 
+                "AF_ukb_calc", 'het', 'hom', 'hem', 'PATHOGENICITY','MOI_original_column')
+
+variants3$counted.partecipants = rowSums(variants3[,c('het', 'hom', 'hem')]) 
+variants3$variatn_id = paste(variants3$CHROM, variants3$POS, variants3$REF, variants3$ALT, sep = "_")
+variants3$new_pathogenicity = unlist(assign.new.pathogenicity(variants3$PATHOGENICITY, pat_keep_df_reshaped))
+variants3$mdt = "platelet"
+
+variants = rbind(variants1, variants2, variants3)
+
+variants = variants[which(variants$GENE %in% c("SERPINC1", "PROC", "PROS1",
+                                               "MPL","GP1BB", "TUBB1",
+                                               "F8","F9","VWF") ),]
+
+ggplot(variants, aes(forcats::fct_infreq(GENE), ..count.., fill = MOI_original_column)) +
+  geom_bar() + 
+  coord_flip() +
+  guides(fill=guide_legend(ncol=1)) +
+  theme(axis.text.x = element_text(size = 24, hjust = 1),
+        strip.text.x = element_text(size = 24, colour = "black"),
+        axis.text.y = element_text(size = 24, angle = 0), 
+        legend.position = 'top',
+  )
+
+ggsave(filename = file_name_out_1, 
+       device = 'svg', 
+       path = outdir,
+       dpi = 'print', 
+       height = 20, 
+       width = 20,
+       units = 'cm')
+
+ggplot(variants, aes(x = reorder(variatn_id, -counted.partecipants), 
+                     y = counted.partecipants, 
+                     fill = as.factor(new_pathogenicity) )) +
+  geom_col() +
+  facet_wrap('GENE', scales = 'free', ) +
+  scale_fill_manual(name = "Pathogenicity",  
+                    values = c("#1779ba",
+                               "#767676",
+                               "#3adb76",
+                               "#ffae00",
+                               "#cc4b37",
+                               "#000000"),
+                    labels = c("2+ db agree P/LP; no conflict",
+                               "1 db P/LP; no conflict",
+                               "At least 1 db P/LP but conflict with VUS/DM?",
+                               "At least 1 db P/LP but conflict with benign/likely benign/risk factor",
+                               "No P/LP; DM? and/or VUS",
+                               "No P/LP; DM? and likely benign/benign or likely benign/benign plus TG/EAHAD curated") 
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 0, angle = 90, hjust = 1),
+        strip.text.x = element_text(size = 24, colour = "black"),
+        axis.text.y = element_text(size = 24),
+        legend.text = element_text(size = 20, colour = "black"),
+        legend.title = element_text(size = 24, colour = "black"),
+        legend.position = 'top',
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA)
+  )
+
+ggsave(filename = file_name_out_2, 
+       device = 'svg', 
+       path = outdir,
+       dpi = 'print', 
+       height = 60, 
+       width = 90,
+       units = 'cm')
+
+
+
+
+
+
 
   

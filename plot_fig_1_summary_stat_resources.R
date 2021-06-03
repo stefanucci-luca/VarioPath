@@ -211,13 +211,13 @@ matrix_heatmap = dcast(all_domain_combinations , Var1 ~ Var2 , value.var = "over
 rownames(matrix_heatmap) = matrix_heatmap[,1]
 matrix_heatmap = as.matrix(matrix_heatmap[,-1])
 
-matrix_heatmap_log = log(matrix_heatmap+1e-10)
+matrix_heatmap_log = log(matrix_heatmap+1)
 
-plot1 = corrplot(matrix_heatmap_log, method = 'color', 
+plot1 = corrplot(matrix_heatmap_log, method = 'color',
          type = 'upper', order = 'hclust', hclust.method = 'complete',
-         is.corr = FALSE, tl.pos='l', tl.cex = 0.61, tl.col = "black",tl.srt = 45, cl.pos = "b", 
+         is.corr = FALSE, tl.pos='l', tl.cex = 0.81, tl.col = "black",tl.srt = 45, cl.pos = "r", 
          diag = TRUE,
-         col= colorRampPalette(c("blue","yellow","blue"))(50))
+         col= colorRampPalette(c("white","blue"))(60))
 
 grid.echo()
 P1 <- grid.grab()
